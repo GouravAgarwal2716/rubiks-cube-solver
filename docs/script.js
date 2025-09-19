@@ -425,7 +425,7 @@ function generateMinimalSolution(cubeState) {
 
 // API calls
 async function sendSolveRequest(formData) {
-    const response = await fetch('http://127.0.0.1:5000/solve', {
+    const response = await fetch('https://rubiks-cube-solver-qyjc.onrender.com/solve', {
         method: 'POST',
         body: formData
     });
