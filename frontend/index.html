@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rubik's Cube Solver AI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .face-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .face-item {
+            position: relative;
+            border: 3px dashed #e2e8f0;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .face-item.has-image {
+            border-color: #48bb78;
+            border-style: solid;
+            background: #f0fff4;
+        }
+
+        .face-item.dragover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+            transform: scale(1.02);
+        }
+
+        .face-label {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .face-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #e2e8f0;
+        }
+
+        .upload-text {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .camera-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 15px;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        select {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            font-size: 1rem;
+        }
+
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 15px;
+            border: 3px solid #e2e8f0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .solution-display {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            border: 2px solid #e2e8f0;
+        }
+
+        .steps-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            background: white;
+        }
+
+        .step {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            background: #f8fafc;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            font-weight: bold;
+            color: #4299e1;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .step-move {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .step-description {
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .step-guidance {
+            color: #718096;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 2px solid #48bb78;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 2px solid #f56565;
+        }
+
+        .status.info {
+            background: #ebf8ff;
+            color: #2a4365;
+            border: 2px solid #4299e1;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4299e1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .face-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .camera-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4299e1, #48bb78);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cube"></i> Rubik's Cube Solver AI</h1>
+            <p>Upload or capture all 6 faces and get step-by-step solution instructions</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2><i class="fas fa-camera"></i> Input Faces</h2>
+                
+                <div class="face-grid">
+                    <div class="face-item" data-face="U">
+                        <div class="face-label">
+                            <i class="fas fa-arrow-up"></i> U (Up)
+                        </div>
+                        <img class="face-preview hidden" id="preview-U">
+                        <input type="file" id="U" accept="image/*" style="display: none;">
+                        <div class="upload-text">Click to upload or drag & drop</div>
+                    </div>
+                    
+                    <div class="face-item" data-face="R">
+                        <div class="face-label">
+                            <i class="fas fa-arrow-right"></i> R (Right)
+                        </div>
+                        <img class="face-preview hidden" id="preview-R">
+                        <input type="file" id="R" accept="image/*" style="display: none;">
+                        <div class="upload-text">Click to upload or drag & drop</div>
+                    </div>
+                    
+                    <div class="face-item" data-face="F">
+                        <div class="face-label">
+                            <i class="fas fa-arrow-forward"></i> F (Front)
+                        </div>
+                        <img class="face-preview hidden" id="preview-F">
+                        <input type="file" id="F" accept="image/*" style="display: none;">
+                        <div class="upload-text">Click to upload or drag & drop</div>
+                    </div>
+                    
+                    <div class="face-item" data-face="D">
+                        <div class="face-label">
+                            <i class="fas fa-arrow-down"></i> D (Down)
+                        </div>
+                        <img class="face-preview hidden" id="preview-D">
+                        <input type="file" id="D" accept="image/*" style="display: none;">
+                        <div class="upload-text">Click to upload or drag & drop</div>
+                    </div>
+                    
+                    <div class="face-item" data-face="L">
+                        <div class="face-label">
+                            <i class="fas fa-arrow-left"></i> L (Left)
+                        </div>
+                        <img class="face-preview hidden" id="preview-L">
+                        <input type="file" id="L" accept="image/*" style="display: none;">
+                        <div class="upload-text">Click to upload or drag & drop</div>
+                    </div>
+                    
+                    <div class="face-item" data-face="B">
+                        <div class="face-label">
+                            <i class="fas fa-arrow-backward"></i> B (Back)
+                        </div>
+                        <img class="face-preview hidden" id="preview-B">
+                        <input type="file" id="B" accept="image/*" style="display: none;">
+                        <div class="upload-text">Click to upload or drag & drop</div>
+                    </div>
+                </div>
+
+                <div class="camera-section">
+                    <h3 style="margin-bottom: 15px;"><i class="fas fa-video"></i> Camera Capture</h3>
+                    <video id="video" autoplay playsinline class="hidden"></video>
+                    <div class="camera-controls">
+                        <button id="startCam" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Start Camera
+                        </button>
+                        <button id="stopCam" class="btn btn-secondary hidden">
+                            <i class="fas fa-stop"></i> Stop Camera
+                        </button>
+                        <select id="faceSelect">
+                            <option value="U">U (Up)</option>
+                            <option value="R">R (Right)</option>
+                            <option value="F" selected>F (Front)</option>
+                            <option value="D">D (Down)</option>
+                            <option value="L">L (Left)</option>
+                            <option value="B">B (Back)</option>
+                        </select>
+                        <button id="capture" class="btn btn-success hidden">
+                            <i class="fas fa-camera"></i> Capture Face
+                        </button>
+                    </div>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="solveBtn" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Solve Cube
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+
+                <div id="note"></div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fas fa-list-ol"></i> Solution</h2>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div>Solving cube...</div>
+                </div>
+
+                <div id="solutionDisplay" class="solution-display hidden"></div>
+                <div id="steps" class="steps-container hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real cube solver -->
+    <script src="cube-solver.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
